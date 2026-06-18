@@ -1,0 +1,4 @@
+jobsync-backend/src/main/resources/application.properties
+jobsync-backend/target/
+jobsync-frontend/node_modules/
+jobsync-frontend/build/
