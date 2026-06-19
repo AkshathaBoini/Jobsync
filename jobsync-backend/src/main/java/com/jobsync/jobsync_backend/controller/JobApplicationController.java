@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/applications")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "https://jobsync-kappa.vercel.app", "https://jobsync-tau.vercel.app"})
 @RequiredArgsConstructor
 public class JobApplicationController {
 
