@@ -40,7 +40,6 @@ public class JobApplicationService {
             app.setAppliedDate(dto.getAppliedDate() != null ? dto.getAppliedDate() : LocalDate.now());
             app.setUpdatedDate(LocalDate.now());
 
-            // Extract text from PDF if uploaded
             if (resumeFile != null && !resumeFile.isEmpty()) {
                 String resumeText = extractTextFromPdf(resumeFile);
                 app.setResumeText(resumeText);
@@ -48,7 +47,6 @@ public class JobApplicationService {
                 app.setResumeText(dto.getResumeText());
             }
 
-            // AI Analysis
             analyzeWithAI(app);
 
             return repository.save(app);
@@ -58,18 +56,17 @@ public class JobApplicationService {
     }
 
     private String extractTextFromPdf(MultipartFile file) {
-    try {
-        org.apache.pdfbox.Loader loader = org.apache.pdfbox.Loader.class.cast(null);
-        PDDocument document = org.apache.pdfbox.Loader.loadPDF(file.getBytes());
-        PDFTextStripper stripper = new PDFTextStripper();
-        String text = stripper.getText(document);
-        document.close();
-        return text;
-    } catch (Exception e) {
-        System.out.println("PDF extraction error: " + e.getMessage());
-        return "";
+        try {
+            PDDocument document = org.apache.pdfbox.Loader.loadPDF(file.getBytes());
+            PDFTextStripper stripper = new PDFTextStripper();
+            String text = stripper.getText(document);
+            document.close();
+            return text;
+        } catch (Exception e) {
+            System.out.println("PDF extraction error: " + e.getMessage());
+            return "";
+        }
     }
-}
 
     public List<JobApplication> getAllApplications() {
         return repository.findAll();
@@ -112,19 +109,23 @@ public class JobApplicationService {
 
     private void analyzeWithAI(JobApplication app) {
         try {
-            String prompt = String.format("""
-                Analyze this job application and respond ONLY with valid JSON, no extra text, no markdown:
-                {
-                  "matchScore": <number between 0 and 100>,
-                  "missingKeywords": "<comma separated missing skills>",
-                  "aiSuggestions": "<2-3 specific suggestions>",
-                  "interviewQuestions": "<3 likely interview questions>"
-                }
-                
-                Job Description: %s
-                
-                Resume: %s
-                """, app.getJobDescription(), app.getResumeText());
+            String jd = app.getJobDescription();
+            String resume = app.getResumeText();
+            if (jd != null && jd.length() > 2000) {
+                jd = jd.substring(0, 2000);
+            }
+            if (resume != null && resume.length() > 2000) {
+                resume = resume.substring(0, 2000);
+            }
+
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.append("Analyze this job application. Respond ONLY with compact valid JSON, no markdown, no extra text, keep each text field under 200 characters. ");
+            promptBuilder.append("Format exactly like this: ");
+            promptBuilder.append("{\"matchScore\":<0-100>,\"missingKeywords\":\"<short comma list>\",\"aiSuggestions\":\"<brief 2 suggestions>\",\"interviewQuestions\":\"<2 short questions>\"} ");
+            promptBuilder.append("Job Description: ").append(jd).append(" ");
+            promptBuilder.append("Resume: ").append(resume);
+
+            String prompt = promptBuilder.toString();
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -132,8 +133,9 @@ public class JobApplicationService {
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", "llama-3.1-8b-instant");
-            body.put("max_tokens", 500);
+            body.put("max_tokens", 600);
             body.put("temperature", 0.1);
+            body.put("response_format", Map.of("type", "json_object"));
             body.put("messages", List.of(Map.of("role", "user", "content", prompt)));
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
@@ -145,26 +147,39 @@ public class JobApplicationService {
                 String content = (String) ((Map) choices.get(0).get("message")).get("content");
 
                 content = content.trim();
-                // Remove markdown code blocks if present
                 if (content.startsWith("```")) {
                     content = content.replaceAll("```json", "").replaceAll("```", "").trim();
                 }
 
-                if (content.startsWith("{")) {
-                    Map<String, Object> parsed = objectMapper.readValue(content, Map.class);
-                    app.setMatchScore(parsed.get("matchScore") instanceof Integer ?
-                        (Integer) parsed.get("matchScore") :
-                        ((Number) parsed.get("matchScore")).intValue());
-                    app.setMissingKeywords((String) parsed.get("missingKeywords"));
-                    app.setAiSuggestions((String) parsed.get("aiSuggestions"));
-                    app.setInterviewQuestions((String) parsed.get("interviewQuestions"));
+                Map<String, Object> parsed = objectMapper.readValue(content, Map.class);
+
+                Object scoreObj = parsed.get("matchScore");
+                if (scoreObj instanceof Integer) {
+                    app.setMatchScore((Integer) scoreObj);
+                } else if (scoreObj instanceof Number) {
+                    app.setMatchScore(((Number) scoreObj).intValue());
+                } else {
+                    app.setMatchScore(0);
                 }
+
+                Object missing = parsed.get("missingKeywords");
+                app.setMissingKeywords(missing != null ? missing.toString() : "");
+
+                Object suggestions = parsed.get("aiSuggestions");
+                app.setAiSuggestions(suggestions != null ? suggestions.toString() : "No suggestions available.");
+
+                Object questions = parsed.get("interviewQuestions");
+                app.setInterviewQuestions(questions != null ? questions.toString() : "");
             }
         } catch (Exception e) {
             System.out.println("GROQ ERROR: " + e.getMessage());
             e.printStackTrace();
-            app.setMatchScore(0);
-            app.setAiSuggestions("AI analysis unavailable at the moment.");
+            if (app.getMatchScore() == null) {
+                app.setMatchScore(0);
+            }
+            if (app.getAiSuggestions() == null) {
+                app.setAiSuggestions("AI analysis unavailable at the moment.");
+            }
         }
     }
 }
