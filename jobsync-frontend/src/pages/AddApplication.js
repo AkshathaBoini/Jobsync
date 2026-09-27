@@ -38,7 +38,9 @@ function AddApplication() {
       formData.append('data', JSON.stringify(form));
       formData.append('resume', resumeFile);
 
-      await axios.post('http://localhost:8080/api/applications', formData, {
+      import API_BASE_URL from '../config';
+// ...
+await axios.post(`${API_BASE_URL}/api/applications`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       navigate('/');

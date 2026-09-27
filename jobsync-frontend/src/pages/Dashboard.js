@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { getAvatarGradient } from '../components/Sidebar';
+import API_BASE_URL from '../config';
 
 const STATUS_COLORS = {
   Applied: { bg: 'rgba(124,58,237,0.15)', text: '#a855f7', border: 'rgba(124,58,237,0.3)' },
@@ -30,8 +31,8 @@ function Dashboard() {
   const fetchData = async () => {
     try {
       const [appsRes, statsRes] = await Promise.all([
-        axios.get('http://localhost:8080/api/applications'),
-        axios.get('http://localhost:8080/api/applications/stats')
+        axios.get(`${API_BASE_URL}/api/applications`),
+        axios.get(`${API_BASE_URL}/api/applications/stats`)
       ]);
       setApplications(appsRes.data);
       setStats(statsRes.data);
@@ -45,7 +46,7 @@ function Dashboard() {
   const handleDelete = async (id, e) => {
     e.stopPropagation();
     if (window.confirm('Delete this application?')) {
-      await axios.delete(`http://localhost:8080/api/applications/${id}`);
+      await axios.delete(`${API_BASE_URL}/api/applications/${id}`);
       fetchData();
     }
   };
@@ -78,7 +79,6 @@ function Dashboard() {
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Glow blobs */}
         <div style={{
           position: 'absolute', top: '-40px', right: '60px',
           width: '180px', height: '180px', borderRadius: '50%',
@@ -94,37 +94,23 @@ function Dashboard() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', position: 'relative' }}>
           <div>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '6px' }}>
-              Welcome back
-            </p>
-            <h1 style={{ color: '#e2e8f0', fontSize: '1.7rem', fontWeight: '700', marginBottom: '8px' }}>
-              Hey, Akshatha 👋
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.9rem' }}>
-              {getWelcomeMessage(stats)}
-            </p>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '6px' }}>Welcome back</p>
+            <h1 style={{ color: '#e2e8f0', fontSize: '1.7rem', fontWeight: '700', marginBottom: '8px' }}>Hey, Akshatha 👋</h1>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.9rem' }}>{getWelcomeMessage(stats)}</p>
           </div>
           <div style={{
             background: 'rgba(124,58,237,0.15)',
             border: '1px solid rgba(124,58,237,0.25)',
             borderRadius: '14px', padding: '16px 24px', textAlign: 'center'
           }}>
-            <p style={{ color: '#a855f7', fontSize: '1.8rem', fontWeight: '700', lineHeight: 1 }}>
-              {stats.total || 0}
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem', marginTop: '4px' }}>
-              Total Applications
-            </p>
+            <p style={{ color: '#a855f7', fontSize: '1.8rem', fontWeight: '700', lineHeight: 1 }}>{stats.total || 0}</p>
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem', marginTop: '4px' }}>Total Applications</p>
           </div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-        gap: '14px', marginBottom: '24px'
-      }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '24px' }}>
         {[
           { label: 'Interviews', value: stats.interview || 0, icon: '🎙️', color: '#fbbf24', glow: 'rgba(245,158,11,0.2)' },
           { label: 'Offers', value: stats.offer || 0, icon: '🏆', color: '#34d399', glow: 'rgba(16,185,129,0.2)' },
@@ -160,8 +146,7 @@ function Dashboard() {
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: '16px', padding: '20px 24px',
-          marginBottom: '24px'
+          borderRadius: '16px', padding: '20px 24px', marginBottom: '24px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <p style={{ color: '#e2e8f0', fontSize: '0.88rem', fontWeight: '600' }}>Application Pipeline</p>
@@ -232,9 +217,7 @@ function Dashboard() {
           <div style={{ textAlign: 'center', padding: '80px 20px' }}>
             <p style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🎯</p>
             <p style={{ color: '#e2e8f0', marginBottom: '8px', fontWeight: '600' }}>No applications yet</p>
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.88rem' }}>
-              Click "Add Application" in the sidebar to get started!
-            </p>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.88rem' }}>Click "Add Application" in the sidebar to get started!</p>
           </div>
         ) : (
           filtered.map((app, i) => (

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAvatarGradient } from '../components/Sidebar';
+import API_BASE_URL from '../config';
 
 const STATUS_COLORS = {
   Applied: { bg: 'rgba(124,58,237,0.15)', text: '#a855f7', border: 'rgba(124,58,237,0.3)' },
@@ -20,19 +21,19 @@ function ApplicationDetail() {
   useEffect(() => { fetchApp(); }, []);
 
   const fetchApp = async () => {
-    const res = await axios.get(`http://localhost:8080/api/applications/${id}`);
+    const res = await axios.get(`${API_BASE_URL}/api/applications/${id}`);
     setApp(res.data);
     setNotes(res.data.notes || '');
   };
 
   const updateStatus = async (status) => {
-    await axios.patch(`http://localhost:8080/api/applications/${id}/status`, { status });
+    await axios.patch(`${API_BASE_URL}/api/applications/${id}/status`, { status });
     fetchApp();
   };
 
   const saveNotes = async () => {
     setSaving(true);
-    await axios.patch(`http://localhost:8080/api/applications/${id}/notes`, { notes });
+    await axios.patch(`${API_BASE_URL}/api/applications/${id}/notes`, { notes });
     setSaving(false);
   };
 
@@ -59,7 +60,6 @@ function ApplicationDetail() {
 
   return (
     <div>
-      {/* Back */}
       <button onClick={() => navigate('/')} style={{
         background: 'transparent', border: 'none',
         color: 'rgba(255,255,255,0.3)', fontSize: '0.88rem',
@@ -72,13 +72,7 @@ function ApplicationDetail() {
         ← Back to Dashboard
       </button>
 
-      {/* Header Card */}
-      <div style={{
-        ...glassCard,
-        borderColor: 'rgba(124,58,237,0.2)',
-        marginBottom: '18px'
-      }}>
-        {/* Glow */}
+      <div style={{ ...glassCard, borderColor: 'rgba(124,58,237,0.2)', marginBottom: '18px' }}>
         <div style={{
           position: 'absolute', top: '-40px', right: '-20px',
           width: '180px', height: '180px', borderRadius: '50%',
@@ -88,8 +82,7 @@ function ApplicationDetail() {
 
         <div style={{
           display: 'flex', justifyContent: 'space-between',
-          alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px',
-          position: 'relative'
+          alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px', position: 'relative'
         }}>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <div style={{
@@ -102,9 +95,7 @@ function ApplicationDetail() {
               {app.companyName?.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h1 style={{ color: '#e2e8f0', fontSize: '1.5rem', fontWeight: '700' }}>
-                {app.jobTitle}
-              </h1>
+              <h1 style={{ color: '#e2e8f0', fontSize: '1.5rem', fontWeight: '700' }}>{app.jobTitle}</h1>
               <p style={{ color: 'rgba(255,255,255,0.35)', marginTop: '5px', fontSize: '0.88rem' }}>
                 {app.companyName} • Applied {app.appliedDate}
               </p>
@@ -125,24 +116,17 @@ function ApplicationDetail() {
             <div style={{
               background: 'rgba(52,211,153,0.1)',
               border: '1px solid rgba(52,211,153,0.2)',
-              borderRadius: '14px', padding: '18px 28px',
-              textAlign: 'center'
+              borderRadius: '14px', padding: '18px 28px', textAlign: 'center'
             }}>
-              <p style={{
-                color: '#34d399', fontSize: '2.4rem',
-                fontWeight: '700', lineHeight: 1
-              }}>
+              <p style={{ color: '#34d399', fontSize: '2.4rem', fontWeight: '700', lineHeight: 1 }}>
                 {app.matchScore}%
               </p>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', marginTop: '5px' }}>
-                Match Score
-              </p>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', marginTop: '5px' }}>Match Score</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Status Update */}
       <div style={glassCard}>
         <p style={{
           color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem',
@@ -166,7 +150,6 @@ function ApplicationDetail() {
         </div>
       </div>
 
-      {/* AI Analysis */}
       {app.aiSuggestions && (
         <div style={glassCard}>
           <p style={{
@@ -177,7 +160,6 @@ function ApplicationDetail() {
             🤖 AI Analysis
           </p>
           <div style={{ display: 'grid', gap: '14px' }}>
-
             {app.missingKeywords && (
               <div style={{
                 background: 'rgba(245,158,11,0.06)',
@@ -224,7 +206,6 @@ function ApplicationDetail() {
         </div>
       )}
 
-      {/* Notes */}
       <div style={glassCard}>
         <p style={{
           color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem',
